@@ -1,27 +1,48 @@
-import { router } from 'expo-router';
-import React, { useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
-    ImageBackground,
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ImageBackground,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
+import { peopleApi } from '../api';
 
 export default function PersonFormScreen() {
+  const params = useLocalSearchParams();
+  const isEdit = params.isEdit === 'true';
+  
   const [formData, setFormData] = useState({
+    id: '',
     surname: '',
-    lastname: '',
-    prename: '',
-    phoneNumber: '',
+    familyname: '',
+    name: '',
+    cellphone: '',
     address: '',
   });
+
+  // Pre-fill form data when editing
+  useEffect(() => {
+    console.log('isEdit:', isEdit, 'params:', params);
+    if (isEdit && params) {
+      setFormData({
+        id: (params.id as string) || '',
+        surname: (params.surname as string) || '',
+        familyname: (params.familyname as string) || '',
+        name: (params.name as string) || '',
+        cellphone: (params.cellphone as string) || '',
+        address: (params.address as string) || '',
+      });
+    }
+  }, []);
 
   const handleBackPress = () => {
     console.log('Back button pressed');
@@ -35,24 +56,66 @@ export default function PersonFormScreen() {
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async() => {
     console.log('Save pressed with data:', formData);
-    // TODO: Implement save functionality
-    // Validate form data and save to backend
+    console.log('Is edit mode:', isEdit);
+    
+    // Validate form data
+    if (!formData.surname || !formData.familyname || !formData.name) {
+      showToast('error','Validation Error','Surname, Family name, and Name are required.');
+      return;
+    }
+
+    try {
+      if (isEdit) {
+        // TODO: Implement update person API call
+        // For now, we'll use addPerson (you can add updatePerson to your API)
+        const updated = await peopleApi.addPerson(formData);
+        if(updated){
+          showToast("success","Person","Person was updated successfully");
+          router.back();
+        }
+      } else {
+        // Create new person
+        const posted = await peopleApi.addPerson(formData);
+        if(posted){
+          showToast("success","Person","Person was created successfully");
+          handleCancel();
+        }
+      }
+    } catch (error) {
+      showToast('error', 'Error', isEdit ? 'Failed to update person' : 'Failed to create person');
+      console.error('Save error:', error);
+    }
   };
 
   const handleCancel = () => {
     console.log('Cancel pressed');
-    // TODO: Navigate back or reset form
-    setFormData({
-      surname: '',
-      lastname: '',
-      prename: '',
-      phoneNumber: '',
-      address: '',
-    });
-    router.back();
+    
+    if (isEdit) {
+      // In edit mode, just go back without resetting
+      router.back();
+    } else {
+      // In create mode, reset the form and go back
+      setFormData({
+        id: '',
+        surname: '',
+        familyname: '',
+        name: '',
+        cellphone: '',
+        address: '',
+      });
+      router.back();
+    }
   };
+  
+  const showToast = (type: 'success' | 'error', title: string, message: string) => {
+    Toast.show({
+      type,
+      text1: title,
+      text2: message
+    });
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -63,7 +126,7 @@ export default function PersonFormScreen() {
         <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>New person</Text>
+        <Text style={styles.headerTitle}>{isEdit ? 'Edit person' : 'New person'}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -102,8 +165,8 @@ export default function PersonFormScreen() {
                   style={styles.input}
                   placeholder="Lastname"
                   placeholderTextColor="#A0A0A0"
-                  value={formData.lastname}
-                  onChangeText={(text) => handleInputChange('lastname', text)}
+                  value={formData.familyname}
+                  onChangeText={(text) => handleInputChange('familyname', text)}
                   autoCapitalize="words"
                   autoCorrect={false}
                 />
@@ -113,10 +176,10 @@ export default function PersonFormScreen() {
               <View style={styles.inputContainer}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Pre-name"
+                  placeholder="Name"
                   placeholderTextColor="#A0A0A0"
-                  value={formData.prename}
-                  onChangeText={(text) => handleInputChange('prename', text)}
+                  value={formData.name}
+                  onChangeText={(text) => handleInputChange('name', text)}
                   autoCapitalize="words"
                   autoCorrect={false}
                 />
@@ -128,8 +191,8 @@ export default function PersonFormScreen() {
                   style={styles.input}
                   placeholder="Phone Number"
                   placeholderTextColor="#A0A0A0"
-                  value={formData.phoneNumber}
-                  onChangeText={(text) => handleInputChange('phoneNumber', text)}
+                  value={formData.cellphone}
+                  onChangeText={(text) => handleInputChange('cellphone', text)}
                   keyboardType="phone-pad"
                   autoCorrect={false}
                 />
@@ -150,7 +213,7 @@ export default function PersonFormScreen() {
 
               {/* Save Button */}
               <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveButtonText}>Save</Text>
+                <Text style={styles.saveButtonText}>{isEdit ? 'Update' : 'Save'}</Text>
               </TouchableOpacity>
 
               {/* Cancel Link */}

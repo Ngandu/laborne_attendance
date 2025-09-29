@@ -1,87 +1,130 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-    FlatList,
-    ImageBackground,
-    SafeAreaView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  ImageBackground,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-
-interface Person {
-  id: string;
-  name: string;
-  phone: string;
-  address: string;
-}
+import { Person, handleApiError, peopleApi } from '../api';
 
 export default function PeopleScreen() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [people] = useState<Person[]>([
-    { 
-      id: '1', 
-      name: 'Patrick Ngandu Mudiayi', 
-      phone: '081 132 7643',
-      address: '23 Matondo Av, UPN, Selembao'
-    },
-    { 
-      id: '2', 
-      name: 'Patrick Ngandu Mudiayi', 
-      phone: '081 132 7643',
-      address: '23 Matondo Av, UPN, Selembao'
-    },
-    { 
-      id: '3', 
-      name: 'Patrick Ngandu Mudiayi', 
-      phone: '081 132 7643',
-      address: '23 Matondo Av, UPN, Selembao'
-    },
-    { 
-      id: '4', 
-      name: 'Patrick Ngandu Mudiayi', 
-      phone: '081 132 7643',
-      address: '23 Matondo Av, UPN, Selembao'
-    },
-    { 
-      id: '5', 
-      name: 'Patrick Ngandu Mudiayi', 
-      phone: '081 132 7643',
-      address: '23 Matondo Av, UPN, Selembao'
-    },
-  ]);
+  const [people, setPeople] = useState<Person[]>([]);
+  const [filteredPeople, setFilteredPeople] = useState<Person[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
+
+  // Fetch people data on component mount
+  useEffect(() => {
+    loadPeople();
+  }, []);
+
+  // Filter people when search query changes
+  useEffect(() => {
+    const filterPeople = () => {
+      if (!searchQuery.trim()) {
+        setFilteredPeople(people);
+        return;
+      }
+
+      const query = searchQuery.toLowerCase().trim();
+      const filtered = people.filter(person => 
+        person.name.toLowerCase().includes(query) ||
+        person.surname.toLowerCase().includes(query) ||
+        person.familyname.toLowerCase().includes(query) ||
+        person.cellphone.includes(query) ||
+        person.address.toLowerCase().includes(query)
+      );
+      setFilteredPeople(filtered);
+    };
+    
+    filterPeople();
+  }, [searchQuery, people]);
+
+  const loadPeople = async () => {
+    try {
+      setLoading(true);
+      const peopleData = await peopleApi.getAllPeople();
+      setPeople(peopleData);
+    } catch (error) {
+      console.error('Error loading people:', error);
+      Alert.alert('Error', handleApiError(error));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      setFilteredPeople(people);
+      return;
+    }
+
+    try {
+      setSearching(true);
+      // filter the people data using the search
+      const filtered = people.filter(person =>
+        person.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        person.surname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        person.familyname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        person.cellphone.includes(searchQuery) ||
+        person.address.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredPeople(filtered);
+    } catch (error) {
+      console.error('Error searching people:', error);
+      Alert.alert('Search Error', handleApiError(error));
+    } finally {
+      setSearching(false);
+    }
+  };
 
   const handleBackPress = () => {
     console.log('Back button pressed');
     router.back();
   };
 
-  const handleSearch = () => {
-    console.log('Search pressed with query:', searchQuery);
-    // TODO: Implement search functionality
-  };
-
   const handleFloatingButtonPress = () => {
     console.log('Add person button pressed');
-    router.push('person_form');
+    router.push('/person_form');
   };
 
-  const filteredPeople = people.filter(person =>
-    person.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    person.phone.includes(searchQuery) ||
-    person.address.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handlePersonPress = (person: Person) => {
+    console.log('Person pressed for editing:', person);
+    // Navigate to person_form with the person data for editing
+    router.push({
+      pathname: '/person_form',
+      params: {
+        id: person.id,
+        name: person.name,
+        surname: person.surname,
+        familyname: person.familyname,
+        cellphone: person.cellphone,
+        address: person.address,
+        isEdit: 'true'
+      }
+    });
+  };
 
   const renderPersonItem = ({ item }: { item: Person }) => (
-    <View style={styles.personItem}>
-      <Text style={styles.personName}>{item.name}</Text>
-      <Text style={styles.personPhone}>{item.phone}</Text>
+    <TouchableOpacity 
+      style={styles.personItem} 
+      onPress={() => handlePersonPress(item)}
+      activeOpacity={0.7}
+    >
+      <Text style={styles.personName}>{`${item.name} ${item.familyname} ${item.surname}`}</Text>
+      <Text style={styles.personPhone}>{item.cellphone}</Text>
       <Text style={styles.personAddress}>{item.address}</Text>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -121,13 +164,22 @@ export default function PeopleScreen() {
 
           {/* People List */}
           <View style={styles.listContainer}>
-            <FlatList
-              data={filteredPeople}
-              renderItem={renderPersonItem}
-              keyExtractor={(item) => item.id}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.listContent}
-            />
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#4A9B8E" />
+                <Text style={styles.loadingText}>Loading people...</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={filteredPeople}
+                renderItem={renderPersonItem}
+                keyExtractor={(item) => item.id}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.listContent}
+                refreshing={searching}
+                onRefresh={loadPeople}
+              />
+            )}
           </View>
         </View>
 
@@ -232,6 +284,17 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 12,
   },
   personItem: {
     paddingVertical: 16,

@@ -1,16 +1,21 @@
 import { Feather } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import { getAuth } from 'firebase/auth';
+import React, { useEffect, useState } from 'react';
 import {
-    FlatList,
-    ImageBackground,
-    SafeAreaView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  ImageBackground,
+  Pressable,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
+import Toast from 'react-native-toast-message';
+import { attendanceApi, AttendanceRecord } from '../api';
 
 interface Attendee {
   id: string;
@@ -19,28 +24,50 @@ interface Attendee {
 }
 
 export default function AttendanceScreen() {
-  const [attendees, setAttendees] = useState<Attendee[]>([
-    { id: '1', name: 'Patrick Ngandu Mudiayi', isPresent: false },
-    { id: '2', name: 'Patrick Ngandu Mudiayi', isPresent: true },
-    // Add more attendees as needed
-  ]);
-
-  const currentDate = new Date();
-  const formattedDate = `${currentDate.getDate().toString().padStart(2, '0')} / ${(currentDate.getMonth() + 1).toString().padStart(2, '0')}. / ${currentDate.getFullYear()}`;
+    const [attendances, setAttendances] = useState<AttendanceRecord[]>([]);
+    const auth = getAuth();
+    const user = auth.currentUser;
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [currentDate, setCurrentDate] = useState(new Date());
 
   const toggleAttendance = (id: string) => {
-    setAttendees(prev => 
+    setAttendances(prev => 
       prev.map(attendee => 
-        attendee.id === id 
-          ? { ...attendee, isPresent: !attendee.isPresent }
+        attendee.person_id === id 
+          ? { ...attendee, attendance: !attendee.attendance, date: currentDate.toISOString().split('T')[0] }
           : attendee
       )
     );
   };
 
-  const handleFloatingButtonPress = () => {
+  const fetchPeople = async () => {
+    if (user) {
+      // get the people from api
+      try {
+        const attendanceData = await attendanceApi.getAttendanceByDate(currentDate.toISOString().split('T')[0]);
+        setAttendances(attendanceData);
+        console.log(attendanceData);
+      } catch (error) {
+        console.error("Error fetching attendance:", error);
+      }
+    } else {
+      console.log("No user logged in");
+    }
+  };
+
+  const handleFloatingButtonPress = async() => {
     console.log('Floating button pressed');
-    // TODO: Add functionality (e.g., add new attendee, save attendance, etc.)
+    try {
+      const success = await attendanceApi.postAttendance(attendances);
+      if (success) {
+        console.log('Attendance posted successfully');
+        showToast('success','Attendance','posted successfully');
+      } else {
+        console.log('Failed to post attendance');
+      }
+    } catch (error) {
+      console.error('Error posting attendance:', error);
+    }
   };
 
   const handleBackPress = () => {
@@ -48,16 +75,36 @@ export default function AttendanceScreen() {
     router.back();
   };
 
-  const renderAttendeeItem = ({ item }: { item: Attendee }) => (
+
+
+    useEffect(() => {
+      fetchPeople();
+    }, []);
+
+    const fetchForDate = async () => {
+      console.log(currentDate);
+      fetchPeople();
+    }
+
+    const showToast = (type: 'success' | 'error', title: string, message: string) => {
+      Toast.show({
+        type,
+        text1: title,
+        text2: message
+      });
+    }
+
+  const renderAttendeeItem = ({ item }: { item: AttendanceRecord }) => (
     <TouchableOpacity 
       style={styles.attendeeItem}
-      onPress={() => toggleAttendance(item.id)}
+      onPress={() => toggleAttendance(item.person_id)}
+      key={item.person_id}
     >
       <View style={[
         styles.statusIndicator, 
-        { backgroundColor: item.isPresent ? '#4CAF50' : '#BDBDBD' }
+        { backgroundColor: item.attendance ? '#4CAF50' : '#BDBDBD' }
       ]} />
-      <Text style={styles.attendeeName}>{item.name}</Text>
+      <Text style={styles.attendeeName}>{item.name} {item.surname} {item.familyname}</Text>
     </TouchableOpacity>
   );
 
@@ -83,15 +130,29 @@ export default function AttendanceScreen() {
         <View style={styles.contentContainer}>
           {/* Date Display */}
           <View style={styles.dateContainer}>
-            <Text style={styles.dateText}>{formattedDate}</Text>
+            <DateTimePicker
+            style={{flex: 1}}
+                value={currentDate}
+                mode="date"
+                display="default"
+                onChange={(event, selectedDate) => {
+                  setShowDatePicker(false);
+                  if (selectedDate) {
+                    setCurrentDate(selectedDate);
+                  }
+                }}
+              />
+              <Pressable onPress={() => fetchForDate(true)} style={styles.dateButton}>
+                <Feather name="search" size={20} color="#fff" />
+              </Pressable>
           </View>
 
           {/* Attendee List */}
           <View style={styles.listContainer}>
             <FlatList
-              data={attendees}
+              data={attendances}
               renderItem={renderAttendeeItem}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item) => item.person_id}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.listContent}
             />
@@ -152,11 +213,9 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   dateContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
     marginBottom: 20,
+    width: '100%',
+    flexDirection: 'row',
     alignSelf: 'flex-start',
   },
   dateText: {
@@ -216,4 +275,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
+  dateButton: {
+    marginLeft: 10,
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#4A9B8E',
+  }
 });

@@ -1,5 +1,8 @@
+import { useAuth } from '@/contexts/AuthContext';
 import React, { useState } from 'react';
 import {
+    ActivityIndicator,
+    Alert,
     Image,
     ImageBackground,
     KeyboardAvoidingView,
@@ -17,15 +20,46 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { signIn } = useAuth();
 
-  const handleLogin = () => {
-    // TODO: Implement login logic
-    console.log('Login pressed');
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await signIn(email.trim(), password);
+      // Navigation will be handled automatically by the AuthWrapper in _layout.tsx
+    } catch (error: any) {
+      console.error('Login error:', error);
+      let errorMessage = 'An error occurred during login';
+      
+      if (error.code === 'auth/user-not-found') {
+        errorMessage = 'No user found with this email address';
+      } else if (error.code === 'auth/wrong-password') {
+        errorMessage = 'Incorrect password';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Please enter a valid email address';
+      } else if (error.code === 'auth/user-disabled') {
+        errorMessage = 'This account has been disabled';
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many failed attempts. Please try again later';
+      } else if (error.code === 'auth/invalid-credential') {
+        errorMessage = 'Invalid email or password';
+      }
+      
+      Alert.alert('Login Failed', errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleForgotPassword = () => {
     // TODO: Implement forgot password logic
-    console.log('Forgot password pressed');
+    Alert.alert('Forgot Password', 'Password reset functionality will be implemented soon');
   };
 
   return (
@@ -52,8 +86,6 @@ export default function LoginScreen() {
 
             {/* Login Form */}
             <View style={styles.formContainer}>
-              <Text style={styles.title}>Log In</Text>
-
               {/* Email Input */}
               <View style={styles.inputContainer}>
                 <TextInput
@@ -91,8 +123,16 @@ export default function LoginScreen() {
               </View>
 
               {/* Login Button */}
-              <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-                <Text style={styles.loginButtonText}>Log In</Text>
+              <TouchableOpacity 
+                style={[styles.loginButton, loading && styles.loginButtonDisabled]} 
+                onPress={handleLogin}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.loginButtonText}>Log In</Text>
+                )}
               </TouchableOpacity>
 
               {/* Forgot Password Link */}
@@ -201,6 +241,10 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
+  },
+  loginButtonDisabled: {
+    backgroundColor: '#A0A0A0',
+    shadowOpacity: 0.1,
   },
   forgotPasswordContainer: {
     alignItems: 'center',

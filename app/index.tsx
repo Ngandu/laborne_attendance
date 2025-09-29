@@ -1,7 +1,10 @@
+import { useAuth } from '@/contexts/AuthContext';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   ImageBackground,
   SafeAreaView,
   StatusBar,
@@ -12,19 +15,50 @@ import {
 } from 'react-native';
 
 export default function HomeScreen() {
+  const [loggingOut, setLoggingOut] = useState(false);
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            setLoggingOut(true);
+            try {
+              await signOut();
+              // Navigation will be handled automatically by AuthWrapper
+            } catch (error) {
+              console.error('Logout error:', error);
+              Alert.alert('Error', 'Failed to logout. Please try again.');
+            } finally {
+              setLoggingOut(false);
+            }
+          },
+        },
+      ],
+    );
+  };
   const handleAttendance = () => {
     console.log('Attendance pressed');
-    router.push('attendance');
+    router.push('/attendance');
   };
 
   const handlePeople = () => {
     console.log('People pressed');
-    router.push('people');
+    router.push('/people');
   };
 
   const handleReports = () => {
     console.log('Reports pressed');
-    router.push('reports');
+    router.push('/reports');
   };
 
   return (
@@ -33,7 +67,19 @@ export default function HomeScreen() {
       
       {/* Header */}
       <View style={styles.header}>
+        <View style={styles.headerLeft} />
         <Text style={styles.headerTitle}>Home</Text>
+        <TouchableOpacity 
+          style={styles.logoutButton} 
+          onPress={handleLogout}
+          disabled={loggingOut}
+        >
+          {loggingOut ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Feather name="log-out" size={20} color="#FFFFFF" />
+          )}
+        </TouchableOpacity>
       </View>
 
       {/* Background with Navigation Buttons */}
@@ -76,13 +122,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#4A9B8E',
     paddingVertical: 20,
     paddingHorizontal: 24,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+  },
+  headerLeft: {
+    width: 40, // Same width as logout button to center title
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: '600',
     color: '#FFFFFF',
+    flex: 1,
+    textAlign: 'center',
+  },
+  logoutButton: {
+    padding: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 40,
+    height: 40,
   },
   backgroundImage: {
     flex: 1,
