@@ -1,7 +1,8 @@
 import { Person } from '../types';
 
 // API Configuration
-const API_BASE_URL = 'http://localhost/Laborne/api.php';
+// const API_BASE_URL = 'http://localhost/Laborne/api.php';
+const API_BASE_URL = 'https://brownsphere.co.za/laborne/api.php';
 
 // API Error class for better error handling
 export class ApiException extends Error {
