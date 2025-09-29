@@ -1,17 +1,19 @@
+import { useTranslation } from '@/contexts/TranslationContext';
 import { Feather } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    FlatList,
-    ImageBackground,
-    SafeAreaView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  ImageBackground,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
+import { attendanceApi, AttendanceRecord } from '../api';
 
 interface AttendeeReport {
   id: string;
@@ -20,43 +22,47 @@ interface AttendeeReport {
 }
 
 export default function ReportsScreen() {
-  const [selectedDate] = useState(new Date());
-  const [attendees] = useState<AttendeeReport[]>([
-    { id: '1', name: 'Patrick Ngandu Mudiayi', isPresent: false },
-    { id: '2', name: 'Patrick Ngandu Mudiayi', isPresent: true },
-    // Add more attendees as needed for demo
-  ]);
-
-  const formatDate = (date: Date) => {
-    return `${date.getDate().toString().padStart(2, '0')} / ${(date.getMonth() + 1).toString().padStart(2, '0')}. / ${date.getFullYear()}`;
-  };
+  const { t } = useTranslation();
+  const [attendances, setAttendances] = useState<AttendanceRecord[]>([]);
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   const handleBackPress = () => {
     console.log('Back button pressed');
     router.back();
   };
 
-  const handleDatePress = () => {
-    // TODO: Open date picker
-    Alert.alert('Date Picker', 'Date picker functionality will be implemented here');
+  const handleSearch = () => {
+    console.log('Search pressed for date:', currentDate);
+    fetchData()
   };
 
-  const handleSearch = () => {
-    console.log('Search pressed for date:', formatDate(selectedDate));
-    // TODO: Implement search functionality for the selected date
-  };
+  // fetch the relevant data needed for the screen
+  const fetchData = async()=>{
+    try {
+      const attendanceData = await attendanceApi.getAttendanceByDate(currentDate.toISOString().split('T')[0]);
+      setAttendances(attendanceData);
+      console.log(attendanceData);
+    } catch (error) {
+      console.error("Error fetching attendance:", error);
+    }
+  }
+
+  // use Effect
+  useEffect(()=>{
+    fetchData()
+  },[])
 
   // Calculate attendance statistics
-  const attendedCount = attendees.filter(attendee => attendee.isPresent).length;
-  const absentCount = attendees.filter(attendee => !attendee.isPresent).length;
+  const attendedCount = attendances.filter(attendee => attendee.attendance).length;
+  const absentCount = attendances.filter(attendee => !attendee.attendance).length;
 
-  const renderAttendeeItem = ({ item }: { item: AttendeeReport }) => (
+  const renderAttendeeItem = ({ item }: { item: AttendanceRecord }) => (
     <View style={styles.attendeeItem}>
       <View style={[
         styles.statusIndicator, 
-        { backgroundColor: item.isPresent ? '#4CAF50' : '#BDBDBD' }
+        { backgroundColor: item.attendance ? '#4CAF50' : '#BDBDBD' }
       ]} />
-      <Text style={styles.attendeeName}>{item.name}</Text>
+      <Text style={styles.attendeeName}>{item.name} {item.surname} {item.familyname}</Text>
     </View>
   );
 
@@ -69,7 +75,7 @@ export default function ReportsScreen() {
         <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Report</Text>
+        <Text style={styles.headerTitle}>{t('report')}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -82,23 +88,31 @@ export default function ReportsScreen() {
         <View style={styles.contentContainer}>
           {/* Date Picker Section */}
           <View style={styles.dateSearchContainer}>
-            <TouchableOpacity style={styles.datePickerButton} onPress={handleDatePress}>
-              <Text style={styles.dateText}>{formatDate(selectedDate)}</Text>
-            </TouchableOpacity>
+            <DateTimePicker
+                style={{flex: 1, marginTop: 5}}
+                value={currentDate}
+                mode="date"
+                display="default"
+                onChange={(event, selectedDate) => {
+                  if (selectedDate) {
+                    setCurrentDate(selectedDate);
+                  }
+                }}
+              />
             <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
               <Feather name="search" size={16} color="#ffffff" />
-              <Text style={styles.searchButtonText}>Search</Text>
+              <Text style={styles.searchButtonText}>{t('search')}</Text>
             </TouchableOpacity>
           </View>
 
           {/* Summary Cards */}
           <View style={styles.summaryContainer}>
             <View style={styles.summaryCard}>
-              <Text style={styles.summaryLabel}>Attended</Text>
+              <Text style={styles.summaryLabel}>{t('attendedCount')}</Text>
               <Text style={styles.summaryNumber}>{attendedCount}</Text>
             </View>
             <View style={styles.summaryCard}>
-              <Text style={styles.summaryLabel}>Absent</Text>
+              <Text style={styles.summaryLabel}>{t('absentCount')}</Text>
               <Text style={styles.summaryNumber}>{absentCount}</Text>
             </View>
           </View>
@@ -106,9 +120,9 @@ export default function ReportsScreen() {
           {/* Attendee List */}
           <View style={styles.listContainer}>
             <FlatList
-              data={attendees}
+              data={attendances}
               renderItem={renderAttendeeItem}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item) => item.person_id}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.listContent}
             />

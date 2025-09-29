@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
@@ -22,10 +23,11 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
+  const { t } = useTranslation();
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert(t('error'), 'Please fill in all fields');
       return;
     }
 
@@ -51,7 +53,7 @@ export default function LoginScreen() {
         errorMessage = 'Invalid email or password';
       }
       
-      Alert.alert('Login Failed', errorMessage);
+      Alert.alert(t('loginError'), errorMessage);
     } finally {
       setLoading(false);
     }
@@ -90,7 +92,7 @@ export default function LoginScreen() {
               <View style={styles.inputContainer}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Email"
+                  placeholder={t('email')}
                   placeholderTextColor="#A0A0A0"
                   value={email}
                   onChangeText={setEmail}
@@ -104,7 +106,7 @@ export default function LoginScreen() {
               <View style={styles.inputContainer}>
                 <TextInput
                   style={[styles.input, styles.passwordInput]}
-                  placeholder="Password"
+                  placeholder={t('password')}
                   placeholderTextColor="#A0A0A0"
                   value={password}
                   onChangeText={setPassword}
@@ -131,7 +133,7 @@ export default function LoginScreen() {
                 {loading ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
-                  <Text style={styles.loginButtonText}>Log In</Text>
+                  <Text style={styles.loginButtonText}>{t('signIn')}</Text>
                 )}
               </TouchableOpacity>
 

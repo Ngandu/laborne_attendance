@@ -1,3 +1,4 @@
+import { useTranslation } from '@/contexts/TranslationContext';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -17,6 +18,7 @@ import Toast from 'react-native-toast-message';
 import { peopleApi } from '../api';
 
 export default function PersonFormScreen() {
+  const { t } = useTranslation();
   const params = useLocalSearchParams();
   const isEdit = params.isEdit === 'true';
   
@@ -62,7 +64,7 @@ export default function PersonFormScreen() {
     
     // Validate form data
     if (!formData.surname || !formData.familyname || !formData.name) {
-      showToast('error','Validation Error','Surname, Family name, and Name are required.');
+      showToast('error', t('error'), 'Surname, Family name, and Name are required.');
       return;
     }
 
@@ -72,19 +74,19 @@ export default function PersonFormScreen() {
         // For now, we'll use addPerson (you can add updatePerson to your API)
         const updated = await peopleApi.addPerson(formData);
         if(updated){
-          showToast("success","Person","Person was updated successfully");
+          showToast('success', t('success'), t('personUpdated'));
           router.back();
         }
       } else {
         // Create new person
         const posted = await peopleApi.addPerson(formData);
         if(posted){
-          showToast("success","Person","Person was created successfully");
+          showToast('success', t('success'), t('personAdded'));
           handleCancel();
         }
       }
     } catch (error) {
-      showToast('error', 'Error', isEdit ? 'Failed to update person' : 'Failed to create person');
+      showToast('error', t('error'), t('personError'));
       console.error('Save error:', error);
     }
   };
@@ -126,7 +128,7 @@ export default function PersonFormScreen() {
         <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{isEdit ? 'Edit person' : 'New person'}</Text>
+        <Text style={styles.headerTitle}>{isEdit ? t('editPerson') : t('addPerson')}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -150,7 +152,7 @@ export default function PersonFormScreen() {
               <View style={styles.inputContainer}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Surname"
+                  placeholder={t('surname')}
                   placeholderTextColor="#A0A0A0"
                   value={formData.surname}
                   onChangeText={(text) => handleInputChange('surname', text)}
@@ -163,7 +165,7 @@ export default function PersonFormScreen() {
               <View style={styles.inputContainer}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Lastname"
+                  placeholder={t('familyName')}
                   placeholderTextColor="#A0A0A0"
                   value={formData.familyname}
                   onChangeText={(text) => handleInputChange('familyname', text)}
@@ -176,7 +178,7 @@ export default function PersonFormScreen() {
               <View style={styles.inputContainer}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Name"
+                  placeholder={t('firstName')}
                   placeholderTextColor="#A0A0A0"
                   value={formData.name}
                   onChangeText={(text) => handleInputChange('name', text)}
@@ -189,7 +191,7 @@ export default function PersonFormScreen() {
               <View style={styles.inputContainer}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Phone Number"
+                  placeholder={t('cellphone')}
                   placeholderTextColor="#A0A0A0"
                   value={formData.cellphone}
                   onChangeText={(text) => handleInputChange('cellphone', text)}
@@ -202,7 +204,7 @@ export default function PersonFormScreen() {
               <View style={styles.inputContainer}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Address"
+                  placeholder={t('address')}
                   placeholderTextColor="#A0A0A0"
                   value={formData.address}
                   onChangeText={(text) => handleInputChange('address', text)}
@@ -213,12 +215,12 @@ export default function PersonFormScreen() {
 
               {/* Save Button */}
               <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveButtonText}>{isEdit ? 'Update' : 'Save'}</Text>
+                <Text style={styles.saveButtonText}>{t('save')}</Text>
               </TouchableOpacity>
 
               {/* Cancel Link */}
               <TouchableOpacity style={styles.cancelContainer} onPress={handleCancel}>
-                <Text style={styles.cancelText}>Cancel</Text>
+                <Text style={styles.cancelText}>{t('cancel')}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>

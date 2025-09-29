@@ -1,3 +1,4 @@
+import { useTranslation } from '@/contexts/TranslationContext';
 import { Feather } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router } from 'expo-router';
@@ -24,6 +25,7 @@ interface Attendee {
 }
 
 export default function AttendanceScreen() {
+    const { t } = useTranslation();
     const [attendances, setAttendances] = useState<AttendanceRecord[]>([]);
     const auth = getAuth();
     const user = auth.currentUser;
@@ -117,7 +119,7 @@ export default function AttendanceScreen() {
         <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Attendance</Text>
+        <Text style={styles.headerTitle}>{t('attendance')}</Text>
         <View style={styles.headerSpacer} />
       </View>
 

@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
@@ -13,22 +14,24 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 export default function HomeScreen() {
   const [loggingOut, setLoggingOut] = useState(false);
   const { signOut } = useAuth();
+  const { t } = useTranslation();
 
   const handleLogout = async () => {
     Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
+      t('logout'),
+      t('logoutConfirm'),
       [
         {
-          text: 'Cancel',
+          text: t('cancel'),
           style: 'cancel',
         },
         {
-          text: 'Logout',
+          text: t('logout'),
           style: 'destructive',
           onPress: async () => {
             setLoggingOut(true);
@@ -37,7 +40,7 @@ export default function HomeScreen() {
               // Navigation will be handled automatically by AuthWrapper
             } catch (error) {
               console.error('Logout error:', error);
-              Alert.alert('Error', 'Failed to logout. Please try again.');
+              Alert.alert(t('error'), 'Failed to logout. Please try again.');
             } finally {
               setLoggingOut(false);
             }
@@ -67,8 +70,8 @@ export default function HomeScreen() {
       
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerLeft} />
-        <Text style={styles.headerTitle}>Home</Text>
+        <LanguageSwitcher />
+        <Text style={styles.headerTitle}>{t('home')}</Text>
         <TouchableOpacity 
           style={styles.logoutButton} 
           onPress={handleLogout}
@@ -92,19 +95,19 @@ export default function HomeScreen() {
           {/* Attendance Button - Full Width */}
           <TouchableOpacity style={styles.attendanceButton} onPress={handleAttendance}>
             <Feather name="check-circle" size={24} color="#ffffff" />
-            <Text style={styles.buttonText}>Attendance</Text>
+            <Text style={styles.buttonText}>{t('attendance')}</Text>
           </TouchableOpacity>
 
           {/* People and Reports Buttons - Side by Side */}
           <View style={styles.bottomButtonsContainer}>
             <TouchableOpacity style={styles.bottomButton} onPress={handlePeople}>
               <Feather name="users" size={24} color="#ffffff" />
-              <Text style={styles.buttonText}>People</Text>
+              <Text style={styles.buttonText}>{t('people')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.bottomButton} onPress={handleReports}>
               <Feather name="file-text" size={24} color="#ffffff" />
-              <Text style={styles.buttonText}>Reports</Text>
+              <Text style={styles.buttonText}>{t('reports')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -127,7 +130,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   headerLeft: {
-    width: 40, // Same width as logout button to center title
+    // Removed fixed width to accommodate language switcher
   },
   headerTitle: {
     fontSize: 24,

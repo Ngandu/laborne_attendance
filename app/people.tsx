@@ -1,3 +1,4 @@
+import { useTranslation } from '@/contexts/TranslationContext';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -17,6 +18,7 @@ import {
 import { Person, handleApiError, peopleApi } from '../api';
 
 export default function PeopleScreen() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [people, setPeople] = useState<Person[]>([]);
   const [filteredPeople, setFilteredPeople] = useState<Person[]>([]);
@@ -57,7 +59,7 @@ export default function PeopleScreen() {
       setPeople(peopleData);
     } catch (error) {
       console.error('Error loading people:', error);
-      Alert.alert('Error', handleApiError(error));
+      Alert.alert(t('error'), handleApiError(error));
     } finally {
       setLoading(false);
     }
@@ -82,7 +84,7 @@ export default function PeopleScreen() {
       setFilteredPeople(filtered);
     } catch (error) {
       console.error('Error searching people:', error);
-      Alert.alert('Search Error', handleApiError(error));
+      Alert.alert(t('error'), handleApiError(error));
     } finally {
       setSearching(false);
     }
@@ -136,7 +138,7 @@ export default function PeopleScreen() {
         <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>People</Text>
+        <Text style={styles.headerTitle}>{t('people')}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -151,14 +153,14 @@ export default function PeopleScreen() {
           <View style={styles.searchContainer}>
             <TextInput
               style={styles.searchInput}
-              placeholder="Filter"
+              placeholder={t('searchPeople')}
               placeholderTextColor="#A0A0A0"
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
             <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
               <Feather name="search" size={16} color="#ffffff" />
-              <Text style={styles.searchButtonText}>Search</Text>
+              <Text style={styles.searchButtonText}>{t('search')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -167,7 +169,7 @@ export default function PeopleScreen() {
             {loading ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#4A9B8E" />
-                <Text style={styles.loadingText}>Loading people...</Text>
+                <Text style={styles.loadingText}>{t('loading')}</Text>
               </View>
             ) : (
               <FlatList

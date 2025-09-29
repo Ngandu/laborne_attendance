@@ -6,6 +6,7 @@ import 'react-native-reanimated';
 import Toast from 'react-native-toast-message';
 
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { TranslationProvider } from '@/contexts/TranslationContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 // Auth routing component
@@ -49,12 +50,14 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
-    <AuthProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <AuthWrapper />
-        <StatusBar style="auto" />
-        <Toast />
-      </ThemeProvider>
-    </AuthProvider>
+    <TranslationProvider>
+      <AuthProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <AuthWrapper />
+          <StatusBar style="auto" />
+          <Toast />
+        </ThemeProvider>
+      </AuthProvider>
+    </TranslationProvider>
   );
 }
