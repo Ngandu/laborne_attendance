@@ -132,21 +132,39 @@ export default function AttendanceScreen() {
         <View style={styles.contentContainer}>
           {/* Date Display */}
           <View style={styles.dateContainer}>
-            <DateTimePicker
+            {/* <DateTimePicker
             style={{flex: 1}}
                 value={currentDate}
                 mode="date"
-                display="default"
-                onChange={(event, selectedDate) => {
+                display={"default"}
+                onChange={(_, selectedDate) => {
                   setShowDatePicker(false);
                   if (selectedDate) {
                     setCurrentDate(selectedDate);
                   }
                 }}
-              />
+              /> */}
+              <Pressable onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
+                <Feather name="calendar" size={20} color="#fff" />
+              </Pressable>
+              {showDatePicker && (
+                <DateTimePicker
+                  style={{ flex: 1 }}
+                  value={currentDate}
+                  mode="date"
+                  display={"default"}
+                  onChange={(_, selectedDate) => {
+                    setShowDatePicker(false);
+                    if (selectedDate) {
+                      setCurrentDate(selectedDate);
+                    }
+                  }}
+                />
+              )}
               <Pressable onPress={() => fetchForDate(true)} style={styles.dateButton}>
                 <Feather name="search" size={20} color="#fff" />
               </Pressable>
+              <Text style={styles.selectedDateText}>{currentDate.toDateString()}</Text>
           </View>
 
           {/* Attendee List */}
@@ -255,7 +273,7 @@ const styles = StyleSheet.create({
   },
   floatingButton: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 70,
     right: 30,
     width: 60,
     height: 60,
@@ -278,9 +296,17 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   dateButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
     marginLeft: 10,
-    padding: 8,
+    padding: 16,
     borderRadius: 8,
     backgroundColor: '#4A9B8E',
+  },
+  selectedDateText: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginLeft: 12,
+    padding: 16
   }
 });

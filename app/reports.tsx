@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import {
   FlatList,
   ImageBackground,
+  Pressable,
   SafeAreaView,
   StatusBar,
   StyleSheet,
@@ -25,6 +26,7 @@ export default function ReportsScreen() {
   const { t } = useTranslation();
   const [attendances, setAttendances] = useState<AttendanceRecord[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const handleBackPress = () => {
     console.log('Back button pressed');
@@ -88,8 +90,12 @@ export default function ReportsScreen() {
         <View style={styles.contentContainer}>
           {/* Date Picker Section */}
           <View style={styles.dateSearchContainer}>
-            <DateTimePicker
-                style={{flex: 1, marginTop: 5}}
+            <Pressable onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
+              <Feather name="calendar" size={16} color="#fff" />
+            </Pressable>
+            {showDatePicker && (
+              <DateTimePicker
+                style={{ flex: 1, marginTop: 5 }}
                 value={currentDate}
                 mode="date"
                 display="default"
@@ -99,10 +105,11 @@ export default function ReportsScreen() {
                   }
                 }}
               />
+            )}
             <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
               <Feather name="search" size={16} color="#ffffff" />
-              <Text style={styles.searchButtonText}>{t('search')}</Text>
             </TouchableOpacity>
+            <Text style={styles.selectedDateText}>{currentDate.toDateString()}</Text>
           </View>
 
           {/* Summary Cards */}
@@ -275,4 +282,18 @@ const styles = StyleSheet.create({
     color: '#333',
     flex: 1,
   },
+  dateButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 10,
+    padding: 16,
+    borderRadius: 8,
+    backgroundColor: '#4A9B8E',
+  },
+  selectedDateText: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginLeft: 12,
+    padding: 16
+  }
 });
